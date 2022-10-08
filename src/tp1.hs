@@ -38,11 +38,12 @@ polAdd a b = polNormalize (a ++ b)
 
 -- Multiply polynomials
 polMultiply :: Pol -> Pol -> Pol
+-- TODO
 polMultiply a b = a
 
 -- Derivate polynomials
 polDerivate :: Pol -> Pol
-polDerivate p = p
+polDerivate p = [(c * e, v, e - 1) | (c, v, e)<-polNormalize p]
 
 -- Parse polynomial
 toPol :: String -> Pol
