@@ -1,4 +1,6 @@
-import Data.List
+module Main where
+import Data.List ( groupBy, sort, sortBy )
+import Data.Char (toLower)
 
 type Mon = (Int, [(Char, Int)]) -- (coefficient, variables)
 type Pol = [Mon]
@@ -53,3 +55,71 @@ toPol s = []
 -- Output polynomial
 toString :: Pol -> String
 toString p = ""
+
+
+
+showMenu :: IO ()
+showMenu = do 
+    putStrLn "\nChoose an option:"
+    putStrLn "a) normalize a polynomial"
+    putStrLn "b) add polynomials"
+    putStrLn "c) multiply polynomials"
+    putStrLn "d) derive a polynomial"
+    putStrLn "e) exit"
+    putStr "Choice:"
+
+
+solveA :: IO ()
+solveA = do
+    putStr "Non normalized polynomial: "
+    polStr <- getLine
+    -- parse pol from String to Pol
+    -- let polParsed = polNormalize polParsed
+    putStrLn ("Normalized polynomial: ") -- ++ polParsed
+
+solveB :: IO ()
+solveB = do
+    putStr "First polynomial: "
+    polStr1 <- getLine
+    -- parse pol from String to Pol
+    putStr "Second polynomial: "
+    polStr2 <- getLine
+    -- parse pol from String to Pol
+    putStrLn ("Pol 1 + Pol 2 = ") -- ++ polAdd polParsed1 polParsed2
+
+solveC :: IO ()
+solveC = do
+    putStr "First polynomial: "
+    polStr1 <- getLine
+    -- parse pol from String to Pol
+    putStr "Second polynomial: "
+    polStr2 <- getLine
+    -- parse pol from String to Pol
+    putStrLn ("Pol 1 * Pol 2 = " ++ polStr1) -- ++ polMultiply polParsed1 polParsed2
+
+solveD :: IO ()
+solveD = do
+    putStr "Derivable polynomial: "
+    polStr <- getLine
+    -- parse pol from String to Pol
+    -- let polParsed = polDerivate polParsed
+    putStrLn ("Derived polynomial: ") -- ++ polParsed
+
+
+
+cicle :: IO ()
+cicle  =
+    do 
+        showMenu
+        choice <- getLine
+        putChar '\n'
+        case map toLower choice of
+            "a" -> do solveA; cicle
+            "b" -> do solveB; cicle
+            "c" -> do solveC; cicle
+            "d" -> do solveD; cicle
+            "e" -> putStr ""
+
+
+main :: IO ()
+main = putStrLn "Apenas teste"
