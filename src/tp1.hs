@@ -49,12 +49,61 @@ polDerivate :: Pol -> Pol
 polDerivate p = [(c * sum [e | (v, e)<-vs], [(v, e - 1)| (v, e)<-vs]) | (c, vs)<-polNormalize p]
 
 -- Parse polynomial
-toPol :: String -> Pol
+toPol :: IO String -> Pol
 toPol s = []
 
 -- Output polynomial
-toString :: Pol -> String
-toString p = ""
+printPol :: Pol -> IO()
+-- type Mon = (Int, [(Char, Int)]) -- (coefficient, variables)
+-- type Pol = [Mon]
+printPol [] = putStr "\n"
+printPol (x:xs) = 
+    do
+        if fst x > 0
+            then putStr " + "
+        else if fst x == 0
+            then putStr ""
+        else putStr " - "
+
+        if fst x /= 1 && fst x /= 0
+            then putStr (show (abs (fst x)))
+        else putStr ""
+
+        if fst x /= 0
+            then parseVariables (snd x)
+        else putStr ""
+
+        printPol xs
+        
+
+
+parseVariables :: [(Char, Int)] -> IO ()
+parseVariables [] = putStr ""
+parseVariables (x:xs) = 
+    do 
+        if exp > 0
+            then do 
+                putChar (fst x)
+                if exp > 1
+                    then do 
+                        putStr "^"  
+                        putStr (show exp)
+                else putStr ""
+
+        else if exp < 0
+            then do 
+                putChar (fst x)
+                putStr "^"   
+                putStr "("; putStr (show exp); putStr ")"
+
+        else putStr ""
+
+        if null xs || exp == 0
+            then putStr ""
+        else putStr "*"
+
+        parseVariables xs
+        where exp = snd x
 
 
 
@@ -123,3 +172,4 @@ cicle  =
 
 main :: IO ()
 main = putStrLn "Apenas teste"
+
