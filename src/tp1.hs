@@ -6,6 +6,52 @@ import Data.Char (toLower, digitToInt, isDigit, isAlphaNum)
 type Mon = (Int, [(String, Int)]) -- (coefficient, variables)
 type Pol = [Mon]
 
+
+------------------------ input ------------------------
+
+-- Read a number from a string until a non digit char is found
+readNumber :: String -> (Int, String)
+readNumber m =  until 
+    (\x -> if snd x /= "" then not (isDigit (head (snd x))) else True) 
+    (\x -> (fst x * 10 + digitToInt (head (snd x)), tail (snd x))) 
+    (0, m)
+
+-- Read chars from a string until a non alphabetic char is found
+readVariable :: String -> (String, String)
+readVariable s = until 
+    (\x -> if not (snd x == "") then head (snd x) == '^' else True) 
+    (\x -> (fst x ++ [head (snd x)], tail (snd x))) 
+    ("", s)
+
+-- Read a variable and exponent list from a string
+readVariables :: String -> [(String, Int)]
+readVariables "" = [("", 0)]
+readVariables s = 
+    if (exp_str /= "" && v /= "") 
+        then [(v, exp)] ++ readVariables (rest)
+        else [(v, 1)]
+    where (v, exp_str) = readVariable s 
+          (exp, rest) = readNumber (tail exp_str)
+
+-- Parse monomial
+toMon :: String -> Mon
+toMon "" = toMon "0"
+toMon m = 
+    if (c /= 0)
+        then (c, v)
+        else if not (isDigit (head m))
+            then (1, v)
+        else (0, v) 
+    where (c, v1) = readNumber m
+          v = readVariables v1
+
+-- Parse polynomial
+toPol :: String -> Pol
+toPol s = map toMon (splitOn "+" (filter (\x -> (isAlphaNum x) || x == '^' || x == '+') s))
+
+
+------------------------ operations ------------------------
+
 getCoefficient :: Mon -> Int
 getCoefficient (c, _) = c
 
@@ -31,7 +77,7 @@ likeTerms p = groupBy (\(_, v1) (_, v2) -> (sort v1 == sort v2)) (sortPol p)
 
 -- Normalize polynomials
 polNormalize :: Pol -> Pol
-polNormalize p = [(sum [c | (c, _)<-x], getVariables (x!!0)) | x <- likeTerms p]
+polNormalize p = filter (\x -> fst x /= 0) [(sum [c | (c, _)<-x], getVariables (x!!0)) | x <- likeTerms p]
 
 -- Add polynomials
 polAdd :: Pol -> Pol -> Pol
@@ -49,52 +95,14 @@ polMultiply a b = [monMultiply x y | x<-a, y<-b]
 polDerivate :: Pol -> Pol
 polDerivate p = [(c * sum [e | (v, e)<-vs], [(v, e - 1)| (v, e)<-vs]) | (c, vs)<-polNormalize p]
 
-readNumber :: String -> (Int, String)
-readNumber m =  until 
-    (\x -> if snd x /= "" then not (isDigit (head (snd x))) else True) 
-    (\x -> (fst x * 10 + digitToInt (head (snd x)), tail (snd x))) 
-    (0, m)
-
-readVariable :: String -> (String, String)
-readVariable s = until 
-    (\x -> if not (snd x == "") then head (snd x) == '^' else True) 
-    (\x -> (fst x ++ [head (snd x)], tail (snd x))) 
-    ("", s)
-
-readVariables :: String -> [(String, Int)]
-readVariables "" = []
-readVariables s = 
-    if (exp_str /= "" && v /= "") 
-        then [(v, exp)] ++ readVariables (rest)
-        else [(v, 1)]
-    where (v, exp_str) = readVariable s 
-          (exp, rest) = readNumber (tail exp_str)
-
--- type Mon = (Int, [(Char, Int)]) -- (coefficient, variables)
--- Parse monomial
-toMon :: String -> Mon
-toMon m = if (c == 0 && length (fst (v!!0)) > 0) then (1, v) else (c, v) 
-    where (c, v1) = readNumber m
-          v = readVariables v1
-
--- Parse polynomial
-toPol :: String -> Pol
-toPol s = map toMon (splitOn "+" (filter (\x -> (isAlphaNum x) || x == '^') s))
+------------------------ output ------------------------
 
 -- Output polynomial
 printPol :: Pol -> IO()
--- type Mon = (Int, [(Char, Int)]) -- (coefficient, variables)
--- type Pol = [Mon]
 printPol [] = putStr "\n"
 printPol (x:xs) = 
     do
-        if fst x > 0
-            then putStr " + "
-        else if fst x == 0
-            then putStr ""
-        else putStr " - "
-
-        if fst x /= 1 && fst x /= 0
+        if fst x /= 0 && fst x /= 1
             then putStr (show (abs (fst x)))
         else putStr ""
 
@@ -102,8 +110,33 @@ printPol (x:xs) =
             then parseVariables (snd x)
         else putStr ""
 
+        if xs == [] || fst x == 0
+            then putStr ""
+            else 
+                if fst (head xs) > 0
+                    then putStr " + "
+                else if fst (head xs) == 0
+                    then putStr ""
+                else putStr " - "
+
         printPol xs
         
+-- Normalize a polynomial from a String
+normalize :: String -> IO()
+normalize s = do printPol (polNormalize (toPol s))
+
+-- Add polynomials from strings
+add :: String -> String -> IO()
+add a b = do printPol (polAdd (toPol a) (toPol b))
+
+-- Multiply polynomials from strings
+multiply :: String -> String -> IO()
+multiply a b = printPol (polMultiply (toPol a) (toPol b))
+
+-- Derivate a polynomial from a string
+derivate :: String -> IO()
+derivate p = printPol (polDerivate (toPol p))
+
 
 
 parseVariables :: [(String, Int)] -> IO ()
@@ -112,24 +145,30 @@ parseVariables (x:xs) =
     do 
         if exp > 0
             then do 
-                putStr (fst x)
-                if exp > 1
-                    then do 
-                        putStr "^"  
-                        putStr (show exp)
+                if (fst x /= "") then do
+                    putStr (fst x)
+                    if exp > 1
+                        then do 
+                            putStr "^"  
+                            putStr (show exp)
+                    else putStr ""
                 else putStr ""
 
         else if exp < 0
             then do 
-                putStr (fst x)
-                putStr "^"   
-                putStr "("; putStr (show exp); putStr ")"
+                if (fst x /= "") then do
+                    putStr (fst x)
+                    putStr "^"   
+                    putStr "("; putStr (show exp); putStr ")"
+                    else putStr ""
 
         else putStr ""
 
-        if null xs || exp == 0
+        if xs == []
             then putStr ""
-        else putStr "*"
+            else if (fst (head xs) /= "" && snd (head xs) > 0 && exp > 0)
+                then putChar '*'
+            else putStr ""
 
         parseVariables xs
         where exp = snd x
@@ -151,37 +190,39 @@ solveA :: IO ()
 solveA = do
     putStr "Non normalized polynomial: "
     polStr <- getLine
-    -- parse pol from String to Pol
-    -- let polParsed = polNormalize polParsed
-    putStrLn ("Normalized polynomial: ") -- ++ polParsed
+    let pol = polNormalize (toPol polStr)
+    putStrLn ("Normalized polynomial: ")
+    printPol pol
 
 solveB :: IO ()
 solveB = do
     putStr "First polynomial: "
-    polStr1 <- getLine
-    -- parse pol from String to Pol
+    polStr <- getLine
+    let pol1 = toPol polStr
     putStr "Second polynomial: "
-    polStr2 <- getLine
-    -- parse pol from String to Pol
-    putStrLn ("Pol 1 + Pol 2 = ") -- ++ polAdd polParsed1 polParsed2
+    polStr <- getLine
+    let pol2 = toPol polStr
+    putStrLn ("Pol 1 + Pol 2 = ") 
+    printPol (polAdd pol1 pol2)
 
 solveC :: IO ()
 solveC = do
     putStr "First polynomial: "
-    polStr1 <- getLine
-    -- parse pol from String to Pol
+    polStr <- getLine
+    let pol1 = toPol polStr
     putStr "Second polynomial: "
-    polStr2 <- getLine
-    -- parse pol from String to Pol
-    putStrLn ("Pol 1 * Pol 2 = " ++ polStr1) -- ++ polMultiply polParsed1 polParsed2
+    polStr <- getLine
+    let pol2 = toPol polStr
+    putStrLn ("Pol 1 * Pol 2 = ")
+    printPol (polMultiply pol1 pol2)
 
 solveD :: IO ()
 solveD = do
     putStr "Derivable polynomial: "
     polStr <- getLine
-    -- parse pol from String to Pol
-    -- let polParsed = polDerivate polParsed
-    putStrLn ("Derived polynomial: ") -- ++ polParsed
+    let pol = toPol polStr
+    putStrLn ("Derived polynomial: ")
+    printPol (polDerivate pol)
 
 
 
@@ -197,8 +238,9 @@ cicle  =
             "c" -> do solveC; cicle
             "d" -> do solveD; cicle
             "e" -> putStr ""
+            _ -> do putStr "Invalid option!\n"; cicle
 
 
 main :: IO ()
-main = putStrLn "Apenas teste"
+main = cicle
 
