@@ -1,14 +1,15 @@
 module Main where
 import Data.List ( groupBy, sort, sortBy )
-import Data.Char (toLower)
+import Data.List.Split ( splitOn )
+import Data.Char (toLower, digitToInt, isDigit, isAlphaNum)
 
-type Mon = (Int, [(Char, Int)]) -- (coefficient, variables)
+type Mon = (Int, [(String, Int)]) -- (coefficient, variables)
 type Pol = [Mon]
 
 getCoefficient :: Mon -> Int
 getCoefficient (c, _) = c
 
-getVariables :: Mon -> [(Char, Int)]
+getVariables :: Mon -> [(String, Int)]
 getVariables (_, v) = v
 
 -- Collapse same variable powers
@@ -48,9 +49,37 @@ polMultiply a b = [monMultiply x y | x<-a, y<-b]
 polDerivate :: Pol -> Pol
 polDerivate p = [(c * sum [e | (v, e)<-vs], [(v, e - 1)| (v, e)<-vs]) | (c, vs)<-polNormalize p]
 
+readNumber :: String -> (Int, String)
+readNumber m =  until 
+    (\x -> if snd x /= "" then not (isDigit (head (snd x))) else True) 
+    (\x -> (fst x * 10 + digitToInt (head (snd x)), tail (snd x))) 
+    (0, m)
+
+readVariable :: String -> (String, String)
+readVariable s = until 
+    (\x -> if not (snd x == "") then head (snd x) == '^' else True) 
+    (\x -> (fst x ++ [head (snd x)], tail (snd x))) 
+    ("", s)
+
+readVariables :: String -> [(String, Int)]
+readVariables "" = []
+readVariables s = 
+    if (exp_str /= "" && v /= "") 
+        then [(v, exp)] ++ readVariables (rest)
+        else [(v, 1)]
+    where (v, exp_str) = readVariable s 
+          (exp, rest) = readNumber (tail exp_str)
+
+-- type Mon = (Int, [(Char, Int)]) -- (coefficient, variables)
+-- Parse monomial
+toMon :: String -> Mon
+toMon m = if (c == 0 && length (fst (v!!0)) > 0) then (1, v) else (c, v) 
+    where (c, v1) = readNumber m
+          v = readVariables v1
+
 -- Parse polynomial
-toPol :: IO String -> Pol
-toPol s = []
+toPol :: String -> Pol
+toPol s = map toMon (splitOn "+" (filter (\x -> (isAlphaNum x) || x == '^') s))
 
 -- Output polynomial
 printPol :: Pol -> IO()
@@ -77,13 +106,13 @@ printPol (x:xs) =
         
 
 
-parseVariables :: [(Char, Int)] -> IO ()
+parseVariables :: [(String, Int)] -> IO ()
 parseVariables [] = putStr ""
 parseVariables (x:xs) = 
     do 
         if exp > 0
             then do 
-                putChar (fst x)
+                putStr (fst x)
                 if exp > 1
                     then do 
                         putStr "^"  
@@ -92,7 +121,7 @@ parseVariables (x:xs) =
 
         else if exp < 0
             then do 
-                putChar (fst x)
+                putStr (fst x)
                 putStr "^"   
                 putStr "("; putStr (show exp); putStr ")"
 
