@@ -226,21 +226,21 @@ solveD = do
 
 
 
-cycle :: IO ()
-cycle  =
+cycler :: IO ()
+cycler  =
     do 
         showMenu
         choice <- getLine
         putChar '\n'
         case map toLower choice of
-            "a" -> do solveA; cycle
-            "b" -> do solveB; cycle
-            "c" -> do solveC; cycle
-            "d" -> do solveD; cycle
+            "a" -> do solveA; cycler
+            "b" -> do solveB; cycler
+            "c" -> do solveC; cycler
+            "d" -> do solveD; cycler
             "e" -> putStr ""
-            _ -> do putStr "Invalid option!\n"; cycle
+            _ -> do putStr "Invalid option!\n"; cycler
 
 
 main :: IO ()
-main = cycle
+main = cycler
 
