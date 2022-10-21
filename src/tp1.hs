@@ -1,6 +1,5 @@
 module Main where
 import Data.List ( groupBy, sort, sortBy )
-import Data.List.Split ( splitOn )
 import Data.Char (toLower, digitToInt, isDigit, isAlphaNum)
 
 type Mon = (Int, [(String, Int)]) -- (coefficient, variables)
@@ -8,6 +7,13 @@ type Pol = [Mon]
 
 
 ------------------------ input ------------------------
+
+splitOn :: Char -> String -> [String]
+splitOn _ "" = []
+splitOn d s = if xs == ""
+    then x : (splitOn d xs)
+    else x : (splitOn d (tail xs))
+    where (x, xs) = break (==d) s
 
 -- Read a number from a string until a non digit char is found
 readNumber :: String -> (Int, String)
@@ -47,7 +53,7 @@ toMon m =
 
 -- Parse polynomial
 toPol :: String -> Pol
-toPol s = map toMon (splitOn "+" (filter (\x -> (isAlphaNum x) || x == '^' || x == '+') s))
+toPol s = map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+') s))
 
 
 ------------------------ operations ------------------------
