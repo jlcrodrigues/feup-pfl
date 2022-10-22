@@ -68,19 +68,21 @@ toMon m =
     where (c, v1) = readNumber m
           v = readVariables v1
 
--- Remove useless variables (e.g. ("", 0))
-cleanPol :: Pol -> Pol
-cleanPol p = [(c, filter (\x -> x /= ("", 0)) v) | (c, v)<-p]
-
 -- Parse polynomial
 toPol :: String -> Pol
-toPol s = cleanPol (map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+' || x == '*' || x == '-') s)))
+toPol s = map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+' || x == '*' || x == '-') s))
 
 ------------------------ operations ------------------------
 
+-- Sort the variables in a monomial
+sortVar :: [Var] -> [Var]
+sortVar [] = []
+sortVar m = if s!!0 == ("", 0) then (tail s) ++ [head s] else s
+    where s = sort m
+
 -- Determine if a monomial should appear first in normal order
 compareMon :: Mon -> Mon -> Ordering
-compareMon (_, v1) (_, v2) = if ((sort v1)!!0 >= (sort v2)!!0) then GT else LT
+compareMon (_, v1) (_, v2) = if ((sortVar v1)!!0 >= (sortVar v2)!!0) then GT else LT
 
 -- Sort a polynomial according to its variable and exponent
 sortPol :: Pol -> Pol
