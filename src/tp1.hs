@@ -1,13 +1,24 @@
-module Main where
+{- |
+Module      :  Polynomial
+Description :  This modules defines a series of functions to work with polynomials.
+-}
+
+module Polynomial where
+
 import Data.List ( groupBy, sort, sortBy )
 import Data.Char (toLower, digitToInt, isDigit, isAlphaNum)
 
+-- | A variable is composed of a string and a number for the exponent.
+type Var = (String, Int)
+-- | A monomial is composed by a coefficient and a list of variables.
 type Mon = (Int, [(String, Int)]) -- (coefficient, variables)
+-- | A polynomial is just a list of monomials
 type Pol = [Mon]
 
 
 ------------------------ input ------------------------
 
+-- Split a string on a given delimiter
 splitOn :: Char -> String -> [String]
 splitOn _ "" = []
 splitOn d s = if xs == ""
@@ -44,7 +55,7 @@ readVariables s =
     where (v, exp_str) = readVariable s 
           (exp, rest) = readNumber (tail exp_str)
 
--- Parse monomial
+-- Parse a monomial
 toMon :: String -> Mon
 toMon "" = toMon "0"
 toMon m = 
@@ -60,19 +71,7 @@ toMon m =
 toPol :: String -> Pol
 toPol s = map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+' || x == '*' || x == '-') s))
 
-
 ------------------------ operations ------------------------
-
-getCoefficient :: Mon -> Int
-getCoefficient (c, _) = c
-
-getVariables :: Mon -> [(String, Int)]
-getVariables (_, v) = v
-
--- Collapse same variable powers
-simplifyMon :: Mon -> Mon
-simplifyMon (c, v) = (c, [(fst (x!!0), sum [e | (_, e)<-x]) | x <- same])
-    where same = (groupBy (\(v1, _) (v2, _) -> (v1 == v2)) (sort v))
 
 -- Determine if a monomial should appear first in normal order
 compareMon :: Mon -> Mon -> Ordering
@@ -88,11 +87,16 @@ likeTerms p = groupBy (\(_, v1) (_, v2) -> (sort v1 == sort v2)) (sortPol p)
 
 -- Normalize polynomials
 polNormalize :: Pol -> Pol
-polNormalize p = filter (\x -> fst x /= 0) [(sum [c | (c, _)<-x], getVariables (x!!0)) | x <- likeTerms p]
+polNormalize p = filter (\x -> fst x /= 0) [(sum [c | (c, _)<-x], snd (x!!0)) | x <- likeTerms p]
 
 -- Add polynomials
 polAdd :: Pol -> Pol -> Pol
 polAdd a b = polNormalize (a ++ b)
+
+-- Collapse same variable powers
+simplifyMon :: Mon -> Mon
+simplifyMon (c, v) = (c, [(fst (x!!0), sum [e | (_, e)<-x]) | x <- same])
+    where same = (groupBy (\(v1, _) (v2, _) -> (v1 == v2)) (sort v))
 
 -- Multiply two monomials
 monMultiply :: Mon -> Mon -> Mon
@@ -102,7 +106,7 @@ monMultiply (c1, vs1) (c2, vs2) = simplifyMon (c1 * c2, vs1 ++ vs2)
 polMultiply :: Pol -> Pol -> Pol
 polMultiply a b = [monMultiply x y | x<-a, y<-b]
 
--- Derivate polynomials
+-- Derivate polynomial in order of a variable
 polDerivate :: String -> Pol -> Pol
 polDerivate o p = [
     (c * sum [e | (v, e)<-vs, v == o],
@@ -151,9 +155,8 @@ multiply a b = printPol (polMultiply (toPol a) (toPol b))
 derivate :: String -> String -> IO()
 derivate o p = printPol (polDerivate o (toPol p))
 
-
-
-parseVariables :: [(String, Int)] -> IO ()
+-- Output list of variables
+parseVariables :: [Var] -> IO ()
 parseVariables [] = putStr ""
 parseVariables (x:xs) = 
     do 
@@ -187,8 +190,7 @@ parseVariables (x:xs) =
         parseVariables xs
         where exp = snd x
 
-
-
+-- | Display the initial Menu
 showMenu :: IO ()
 showMenu = do 
     putStrLn "\nChoose an option:"
@@ -199,7 +201,7 @@ showMenu = do
     putStrLn "e) exit"
     putStr "Choice:"
 
-
+-- | Display normalize menu
 solveA :: IO ()
 solveA = do
     putStr "Non normalized polynomial: "
@@ -208,6 +210,7 @@ solveA = do
     putStrLn ("Normalized polynomial: ")
     printPol pol
 
+-- | Display adding menu
 solveB :: IO ()
 solveB = do
     putStr "First polynomial: "
@@ -219,6 +222,7 @@ solveB = do
     putStrLn ("Pol 1 + Pol 2 = ") 
     printPol (polAdd pol1 pol2)
 
+-- | Display multiply menu
 solveC :: IO ()
 solveC = do
     putStr "First polynomial: "
@@ -230,6 +234,7 @@ solveC = do
     putStrLn ("Pol 1 * Pol 2 = ")
     printPol (polMultiply pol1 pol2)
 
+-- | Display derivation menu
 solveD :: IO ()
 solveD = do
     putStr "Derivable polynomial: "
@@ -240,8 +245,7 @@ solveD = do
     putStrLn ("Derived polynomial: ")
     printPol (polDerivate order pol)
 
-
-
+-- | Start menu cycle
 cycler :: IO ()
 cycler  =
     do 
@@ -256,7 +260,5 @@ cycler  =
             "e" -> putStr ""
             _ -> do putStr "Invalid option!\n"; cycler
 
-
 main :: IO ()
 main = cycler
-
