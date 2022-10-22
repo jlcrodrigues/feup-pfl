@@ -31,7 +31,8 @@ readVariable :: String -> (String, String)
 readVariable s = until 
     (\x -> if not (snd x == "") then (head (snd x) == '^' || head (snd x) == '*') else True) 
     (\x -> (fst x ++ [head (snd x)], tail (snd x))) 
-    ("", s)
+    ("", xs)
+    where xs = if (head s == '*') then tail s else s
 
 -- Read a variable and exponent list from a string
 readVariables :: String -> [(String, Int)]
