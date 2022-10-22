@@ -116,7 +116,7 @@ It is also possible to work with the internal representation of the polynomials.
 ## About
 
 Developed by: 
- - Igor
+ - Igor Diniz *up202000162*
  - José Luís Rodrigues *up202008462* 
 
 *October 2022*
