@@ -3,10 +3,11 @@ Module      :  Polynomial
 Description :  This modules defines a series of functions to work with polynomials.
 -}
 
-module Polynomial where
+module Main where
 
 import Data.List ( groupBy, sort, sortBy )
 import Data.Char (toLower, digitToInt, isDigit, isAlphaNum)
+import System.IO
 
 -- | A variable is composed of a string and a number for the exponent.
 type Var = (String, Int)
@@ -114,6 +115,8 @@ polDerivate o p = [
       | (c, vs)<-polNormalize p]
 
 ------------------------ output ------------------------
+allCoefZero :: [Var] -> Bool
+allCoefZero xs = foldr (\ x -> (&&) (snd x == 0)) True xs
 
 -- Output polynomial
 printPol :: Pol -> IO()
@@ -121,27 +124,24 @@ printPol [] = putStr "\n"
 printPol (x:xs) = 
     do
         if fst x /= 0 && fst x /= 1
-            then putStr (show (abs (fst x)))
+            then putStr (show (fst x))
+        else if fst x == 1 && allCoefZero (snd x)
+            then putStr "1"
         else putStr ""
 
         if fst x /= 0
             then parseVariables (snd x)
         else putStr ""
 
-        if xs == [] || fst x == 0
+        if null xs || fst x == 0
             then putStr ""
-            else 
-                if fst (head xs) > 0
-                    then putStr " + "
-                else if fst (head xs) == 0
-                    then putStr ""
-                else putStr " - "
+        else putStr " + "
 
         printPol xs
         
 -- Normalize a polynomial from a String
 normalize :: String -> IO()
-normalize s = do printPol (polNormalize (toPol s))
+normalize s = do printPol (polNormalize (polNormalize (toPol s)))
 
 -- Add polynomials from strings
 add :: String -> String -> IO()
@@ -149,11 +149,16 @@ add a b = do printPol (polAdd (toPol a) (toPol b))
 
 -- Multiply polynomials from strings
 multiply :: String -> String -> IO()
-multiply a b = printPol (polMultiply (toPol a) (toPol b))
+multiply a b = printPol (polNormalize (polMultiply (toPol a) (toPol b)))
 
 -- Derivate a polynomial from a string
 derivate :: String -> String -> IO()
 derivate o p = printPol (polDerivate o (toPol p))
+
+input :: IO String
+input = do
+    hFlush stdout
+    getLine
 
 -- Output list of variables
 parseVariables :: [Var] -> IO ()
@@ -200,57 +205,58 @@ showMenu = do
     putStrLn "d) derive a polynomial"
     putStrLn "e) exit"
     putStr "Choice:"
+    
 
 -- | Display normalize menu
 solveA :: IO ()
 solveA = do
-    putStr "Non normalized polynomial: "
-    polStr <- getLine
+    putStr "Non normalized polynomial: "; 
+    polStr <- input
     let pol = polNormalize (toPol polStr)
-    putStrLn ("Normalized polynomial: ")
-    printPol pol
+    putStr "Normalized polynomial: "; 
+    printPol pol; 
 
 -- | Display adding menu
 solveB :: IO ()
 solveB = do
-    putStr "First polynomial: "
-    polStr <- getLine
+    putStr "First polynomial: "; 
+    polStr <- input
     let pol1 = toPol polStr
-    putStr "Second polynomial: "
-    polStr <- getLine
+    putStr "Second polynomial: "; 
+    polStr <- input
     let pol2 = toPol polStr
-    putStrLn ("Pol 1 + Pol 2 = ") 
-    printPol (polAdd pol1 pol2)
+    putStr "Pol 1 + Pol 2 = "; 
+    printPol (polAdd pol1 pol2); 
 
 -- | Display multiply menu
 solveC :: IO ()
 solveC = do
     putStr "First polynomial: "
-    polStr <- getLine
+    polStr <- input
     let pol1 = toPol polStr
     putStr "Second polynomial: "
-    polStr <- getLine
+    polStr <- input
     let pol2 = toPol polStr
-    putStrLn ("Pol 1 * Pol 2 = ")
-    printPol (polMultiply pol1 pol2)
+    putStr "Pol 1 * Pol 2 = "
+    printPol (polMultiply pol1 pol2); 
 
 -- | Display derivation menu
 solveD :: IO ()
 solveD = do
-    putStr "Derivable polynomial: "
-    polStr <- getLine
-    putStr "Derivate in order to(variable): "
-    order <- getLine
+    putStr "Derivable polynomial: "; 
+    polStr <- input
+    putStr "Derivate in order to(variable): "; 
+    order <- input
     let pol = toPol polStr
-    putStrLn ("Derived polynomial: ")
-    printPol (polDerivate order pol)
+    putStr "Derived polynomial: "; 
+    printPol (polDerivate order pol); 
 
 -- | Start menu cycle
 cycler :: IO ()
 cycler  =
     do 
         showMenu
-        choice <- getLine
+        choice <- input
         putChar '\n'
         case map toLower choice of
             "a" -> do solveA; cycler
@@ -259,6 +265,7 @@ cycler  =
             "d" -> do solveD; cycler
             "e" -> putStr ""
             _ -> do putStr "Invalid option!\n"; cycler
+
 
 main :: IO ()
 main = cycler
