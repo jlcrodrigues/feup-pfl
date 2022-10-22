@@ -17,7 +17,10 @@ splitOn d s = if xs == ""
 
 -- Read a number from a string until a non digit char is found
 readNumber :: String -> (Int, String)
-readNumber m =  until 
+readNumber "" = (0, "")
+readNumber m =  
+    if not (isDigit (head m)) then (1, m) else
+    until 
     (\x -> if snd x /= "" then not (isDigit (head (snd x))) else True) 
     (\x -> (fst x * 10 + digitToInt (head (snd x)), tail (snd x))) 
     (0, m)
@@ -25,7 +28,7 @@ readNumber m =  until
 -- Read chars from a string until a non alphabetic char is found
 readVariable :: String -> (String, String)
 readVariable s = until 
-    (\x -> if not (snd x == "") then head (snd x) == '^' else True) 
+    (\x -> if not (snd x == "") then (head (snd x) == '^' || head (snd x) == '*') else True) 
     (\x -> (fst x ++ [head (snd x)], tail (snd x))) 
     ("", s)
 
@@ -53,7 +56,7 @@ toMon m =
 
 -- Parse polynomial
 toPol :: String -> Pol
-toPol s = map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+') s))
+toPol s = map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+' || x == '*') s))
 
 
 ------------------------ operations ------------------------
@@ -98,8 +101,11 @@ polMultiply :: Pol -> Pol -> Pol
 polMultiply a b = [monMultiply x y | x<-a, y<-b]
 
 -- Derivate polynomials
-polDerivate :: Pol -> Pol
-polDerivate p = [(c * sum [e | (v, e)<-vs], [(v, e - 1)| (v, e)<-vs]) | (c, vs)<-polNormalize p]
+polDerivate :: String -> Pol -> Pol
+polDerivate o p = [
+    (c * sum [e | (v, e)<-vs, v == o],
+     map (\(vx, ex) -> if (vx == o) then (vx, ex - 1) else (vx, ex)) vs)
+      | (c, vs)<-polNormalize p]
 
 ------------------------ output ------------------------
 
@@ -140,8 +146,8 @@ multiply :: String -> String -> IO()
 multiply a b = printPol (polMultiply (toPol a) (toPol b))
 
 -- Derivate a polynomial from a string
-derivate :: String -> IO()
-derivate p = printPol (polDerivate (toPol p))
+derivate :: String -> String -> IO()
+derivate o p = printPol (polDerivate o (toPol p))
 
 
 
@@ -226,9 +232,11 @@ solveD :: IO ()
 solveD = do
     putStr "Derivable polynomial: "
     polStr <- getLine
+    putStr "Derivate in order to(variable): "
+    order <- getLine
     let pol = toPol polStr
     putStrLn ("Derived polynomial: ")
-    printPol (polDerivate pol)
+    printPol (polDerivate order pol)
 
 
 
