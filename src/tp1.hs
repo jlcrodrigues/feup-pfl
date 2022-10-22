@@ -68,9 +68,13 @@ toMon m =
     where (c, v1) = readNumber m
           v = readVariables v1
 
+-- Remove useless variables (e.g. ("", 0))
+cleanPol :: Pol -> Pol
+cleanPol p = [(c, filter (\x -> x /= ("", 0)) v) | (c, v)<-p]
+
 -- Parse polynomial
 toPol :: String -> Pol
-toPol s = map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+' || x == '*' || x == '-') s))
+toPol s = cleanPol (map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+' || x == '*' || x == '-') s)))
 
 ------------------------ operations ------------------------
 
