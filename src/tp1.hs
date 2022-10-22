@@ -19,11 +19,12 @@ splitOn d s = if xs == ""
 readNumber :: String -> (Int, String)
 readNumber "" = (0, "")
 readNumber m =  
-    if not (isDigit (head m)) then (1, m) else
+    if (not (isDigit (head m)) && head m /= '-') then (1, m) else
     until 
     (\x -> if snd x /= "" then not (isDigit (head (snd x))) else True) 
-    (\x -> (fst x * 10 + digitToInt (head (snd x)), tail (snd x))) 
-    (0, m)
+    (\x -> (fst x * 10 + n * digitToInt (head (snd x)), tail (snd x))) 
+    (0, ms)
+    where (n, ms) = if (head m == '-') then (-1, tail m) else (1, m)
 
 -- Read chars from a string until a non alphabetic char is found
 readVariable :: String -> (String, String)
@@ -56,7 +57,7 @@ toMon m =
 
 -- Parse polynomial
 toPol :: String -> Pol
-toPol s = map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+' || x == '*') s))
+toPol s = map toMon (splitOn '+' (filter (\x -> (isAlphaNum x) || x == '^' || x == '+' || x == '*' || x == '-') s))
 
 
 ------------------------ operations ------------------------
